@@ -10,4 +10,4 @@
 
 - [JavaScript函数式编程](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-23/JavaScript什么是函数式编程.md)
 
-- [https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-24/常用的25个JavaScript单行代码.md](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-24/常用的25个JavaScript单行代码.md)
+- [常用的25个JavaScript单行代码](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-24/常用的25个JavaScript单行代码.md)
