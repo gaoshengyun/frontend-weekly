@@ -11,3 +11,5 @@
 - [JavaScript函数式编程](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-23/JavaScript什么是函数式编程.md)
 
 - [常用的25个JavaScript单行代码](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-24/常用的25个JavaScript单行代码.md)
+
+- [20个让你效率更高的css代码技巧](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-25/20个让你效率更高的css代码技巧.md)
