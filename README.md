@@ -13,3 +13,5 @@
 - [常用的25个JavaScript单行代码](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-24/常用的25个JavaScript单行代码.md)
 
 - [20个让你效率更高的css代码技巧](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-25/20个让你效率更高的css代码技巧.md)
+
+- [重学ES6 Promise](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-26/重学ES6%20Promise.md)
