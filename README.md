@@ -17,3 +17,7 @@
 - [重学ES6 Promise](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-26/重学ES6%20Promise.md)
 
 - [JavaScript执行机制-浏览器事件循环](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-26/JavaScript执行机制-浏览器事件循环.md)
+
+- [vue动态添加路由及生成菜单](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-27/vue动态添加路由及生成菜单.md)
+
+- [vue页面权限控制和登录验证](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-27/vue页面权限控制和登录验证.md)
