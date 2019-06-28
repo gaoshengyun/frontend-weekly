@@ -21,3 +21,5 @@
 - [vue动态添加路由及生成菜单](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-27/vue动态添加路由及生成菜单.md)
 
 - [vue页面权限控制和登录验证](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-27/vue页面权限控制和登录验证.md)
+
+- [需要知道的JavaScript的日期知道](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/06-28/需要知道的JavaScript的日期知道.md)
