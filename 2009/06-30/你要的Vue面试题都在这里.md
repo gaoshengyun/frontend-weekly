@@ -278,4 +278,4 @@ mounted:() => {
 
 ```
 <div :class="{acrive:isActive}"></div>
-```
+``` 
