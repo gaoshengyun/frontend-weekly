@@ -718,4 +718,4 @@ export const RouterConf = [
   }
 ]
 ```
-webpack打包时,将以home命名
+webpack打包时,将以home命名 
