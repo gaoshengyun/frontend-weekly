@@ -29,3 +29,5 @@
 - [JavaScript一元加号运算符](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/07-04/JavaScript一元加号运算符.md)
 
 - [vue使用总结](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/07-05/vue使用总结.md)
+
+- [vuex笔记](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/07-05/vue使用总结.md)
