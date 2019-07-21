@@ -33,3 +33,5 @@
 - [vuex笔记](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/07-05/vue使用总结.md)
 
 - [JavaScript深度拷贝](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/07-18/JavaScript深度拷贝.md)
+
+- [Promise必知必会.](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/07-21/Promise必知必会.md)
