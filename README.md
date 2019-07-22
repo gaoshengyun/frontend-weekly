@@ -35,3 +35,5 @@
 - [JavaScript深度拷贝](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/07-18/JavaScript深度拷贝.md)
 
 - [Promise必知必会.](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/07-21/Promise必知必会.md)
+
+- [vuex了解一下](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/07-22/vuex了解一下.md)
