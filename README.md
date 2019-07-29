@@ -39,3 +39,5 @@
 - [vuex了解一下](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/07-22/vuex了解一下.md)
 
 - [vue中watch高级用法](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/07-23/vue中watch高级用法.md)
+
+- [JavaScript数组常用方法](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/07-29/JavaScript数组常用方法.md)
