@@ -91,3 +91,16 @@ updated
 ### **父组件监听子组件的生命周期**
 
 可以写自定义事件,然后在子组件的生命周期函数中触发为个自定义事件,但是不优雅,我们可以使用hook
+
+```
+<child @hook:created="childCreated"></child>
+```
+
+从A页面切换到B页面,A页面中有一个定时器,到了B页面用不上,需要在离开A页面的时候清除掉,办法很简单,在A页面的生命周期钩子函数beforeDestory或者路由钩子函数beforeRouterLeave里面清除就行了，但是问题来了，怎么拿到定时器呢？把定时器写到data里面，可行但是不优雅，我们有如下写法
+
+```
+// 在初始化定时器之后
+this.$once('hook:beforeDestory', () => {
+  clearInterval(timer)
+})
+```
