@@ -104,3 +104,158 @@ this.$once('hook:beforeDestory', () => {
   clearInterval(timer)
 })
 ```
+
+---
+
+### **is属性**
+
+由于HTML标签的限制，tr标签里面只能有th，td标签，而写自定义标签则会被解析到tr标签外层，所以这时候我们可以用is属性
+
+```
+<tr>
+  <td is="child"></td>
+</tr>
+```
+
+---
+
+### **给事件传额外参数**
+
+原生DOM事件绑定的函数的第一个参数都会是事件对象event，但是有时候我们想给这个函数传递其他参数,直接传会覆盖掉event,我们可以这么写
+
+```
+<div @click="clickDiv(params,$event)"></div>
+```
+
+变量$event就代表对象.
+
+如果要传的变量不是事件对象呢?在使用elementUI的时候碰到一个情况,在表格中使用了下拉菜单组件
+
+```
+<el-table-column label="日期" width="180">
+    <template v-slot="{row}">
+        <el-dropdown-item @command="handleCommand">
+            <span>
+                下拉菜单<i class="el-icon-arrow-down el-icon--right"></i>
+            </span>
+            <template #dropdown>
+                <el-dropdown-menu>
+                    <el-dropdown-item command="a">黄金糕</el-dropdown-item>
+                    <el-dropdown-item command="b">狮子头</el-dropdown-item>
+                </el-dropdown-menu>
+            </template>
+        </el-dropdown-item>
+    </template>
+</el-table-column>
+```
+
+下拉菜单事件command函数自带一个参数,为下拉先中的值,这个时候我们想把表格数据传过去,如果`@command="handleCommand(row)"`这样写,就会覆盖掉自带的参数,该怎么办?这时候我们可以借助箭头函数: `@command="command => handleCommand(row,command)"` 完美解决传参问题.
+
+顺便说一下, elementUI的表格可以用变量 $index 代表当前的列数,和 $event 一样的使用
+
+```
+<el-table-column label="操作">
+    <template v-slot="{ row, $index }">
+        <el-button @click="handleEdit($index, row)">编辑</el-button>
+    </template>
+</el-table-column>
+```
+
+还可以使用扩展运算符
+```
+@current-change="{...defaultArgs} => treeClick(otherArgs, ...defaultArgs)"
+```
+
+---
+
+### **v-slot语法**
+
+v-slot 的用法(slot语法已废弃): 相当于在组件中留一个空位,使用该组件的时候可以传一些标签过去,插入到对应的空位,可以有多个空位,取不同的名字即可.默认是default,同时还可以将一些数据传过去,简写是#
+
+```
+<!-- 子组件 -->
+<div class="container">
+  <header>
+    <slot name="header"></slot>
+  </header>
+  <main>
+    <slot></slot>
+  </main>
+  <footer>
+    <slot name="footer"></slot>
+  </footer>
+</div>
+
+<!-- 父组件 -->
+<base-layout>
+    <!-- 插槽可以简写为# -->
+    <template #header="data">
+        <h1>Here might be a page title</h1>
+    </template>
+    <!-- v-slot:default可省略 -->
+    <div v-slot:default>
+        <p>A paragraph for the main content.</p>
+        <p>And another one.</p>
+    </div>
+    <!-- 可以使用解构 -->
+    <template #footer="{ user }">
+        <p>Here's some contact info</p>
+    </template>
+</base-layout>
+```
+
+总结:
+- 其他名称的slot(非default)仅能用于template标签
+- 插槽里面的标签拿不到传给子标签的数据(插槽相当于孙子组件)
+
+```
+<child :data="data">
+  <div>这里访问不到data数据</div>
+</child>
+```
+
+- 插槽可以使用解构语法 `v-slot="{user}"`
+
+---
+
+### **子组件修改父组件传过来的值**
+
+v-model 在使用的时候很向双向绑定,但是vue的单向数据流, v-model只是语法粮而已: 父组件用v-bind将值传给子组件,子组件通过change/input事件触发修改父组件的值
+
+```
+<input v-model="inputValue">
+<!-- 等价于 -->
+<input :value="inputValue" @change="inputValue = $event.target.value">
+```
+
+v-model 不仅仅能用在input上用,在组件上也能使用
+
+vue组件间传递数据是单向的,即数据总是由父组件传递到子组件,子组件在其内部可以有自己维护的数据,但它无权修改父组件传递给它的数据,我们可以参照v-mode语法糖修改父组件的值,但是每次都这样写太麻烦,vue提供了一个修饰符 .sync, 用法如下:
+
+```
+<child :value.sync="inputValue"></child>
+<!-- 子组件 -->
+<script>
+export default {
+    props: {
+        //props可以设置值得类型，默认值，是否必传以及校验函数
+        value: {
+            type: [String, Number],
+            required: true,
+        },
+    },
+    //用一个变量中转，子组件中就用_value就不会直接修改父组件的值
+    computed: {
+        _value: {
+            get() {
+                return this.value;
+            },
+            set(val) {
+                this.$emit('update:value', val);
+            },
+        },
+    },
+};
+</script>
+
+```
