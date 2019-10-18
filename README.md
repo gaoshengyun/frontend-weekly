@@ -43,3 +43,5 @@
 - [JavaScript数组常用方法](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/07-29/JavaScript数组常用方法.md)
 
 - [vue中的项目优化](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/10-15/Vue中的项目优化.md)
+
+- [vue全家桶开发的一些小技巧和注意事项](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/10-16/vue全家桶开发的一些小技巧和注意事项.md)
