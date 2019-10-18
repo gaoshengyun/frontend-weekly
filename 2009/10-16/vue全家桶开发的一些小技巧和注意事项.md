@@ -259,3 +259,237 @@ export default {
 </script>
 
 ```
+
+---
+
+### **父组件通过ref访问到子组件**
+
+虽然vue提供了$parent和$children来访问父/子组件,但是组件的父组件/子组件存在很多不确定性,例如组件被利用,他的父组件有多种情况,我们可以通过ref访问到子组件的数据和方法
+
+```
+<child ref="myChikd"></child>
+
+<script>
+export default {
+  async mounted() {
+    await this.$nextTick()
+    console..dir(this.$refs.myChild)
+  }
+}
+</script>
+```
+
+注意:
+
+- ref必须等DOM加载好了才可以访问
+- 虽然mounted生命周期DOM已经加载好了,但是为了以防万一,我们可以使用$nextTick函数
+
+---
+
+### **背景图, css的@import使用路径别名**
+
+在用 webpack 处理打包时,可以将某一目录配置一个别名,代码中就能使用与别名的相对路径引用资源
+
+但是在css文件中,如less,sass,stylus中,使用 `@import "@/style/theme"` 的语法引用相对 `@` 的目录会报错.解决办法是在引用路径的字符串前加上 `~` 符号.
+
+- css module 中: `@import "~@/style/theme.less"`
+- css属性中: `background: url("~@/assets/xxx.png")`
+- html标签中: `<img src="~@/assets/xxx.png">`
+
+---
+
+### **vue-router 的 hash 模式和 history 模式**
+
+vue是单页应用,打包之后只有一个index.html文件,将他部署到服务器上之年,访问对应文件的目录就是访问这个文件.
+
+hash 模式: 网址后面跟着 hash 值, hash 值对应每一个 router 的名称, hash 值改变意味着 router 改变, 监听 onhashchange 事件, 来替换页面内容.
+
+优缺点:
+
+1. hash 模式的 # 号很丑, 使用的是 onhashchange 事件切换路由, 兼容性会好一点, 不需要服务器配合
+2. history 模式好看点, 但本地开发, 网站上线, 都需要服务器额外配置, 并且还需要自己写404页面, 使用 HTML5 的 history API, 兼容性差一点.
+
+两者区别在于:
+
+```
+const router = new VueRouter({
+    mode: 'history',	// hash 模式是默认的,无需配置
+		base: '/',	//默认配置
+		routes: [...]
+})
+```
+
+vue-cli3 的 vue.config.js 配置:
+
+```
+module.exports = {
+	publicPath: './',	// hash模式打包用
+	// publicPath: '/',	// history模式打包用
+	devServer: {
+		open: true,
+		port: 8080,
+		// historyApiFallBack: true	// history 模式本地开发用
+	}
+}
+```
+
+如果是网站根目录, router 的 base 就不用填. 如果整个单页应服务在 /app/下, 然后 base 就应该设为 '/app/', 同时打包配置的 publicPath 也应该设置成 '/app/'
+
+vue-cli3 生成新项目的时候会有选择路由的模式,如果选择 history 模式就会帮你都配置好.
+
+---
+
+### **vue-router的钩子函数**
+
+钩子函数分三种: 组件内钩子, 全局钩子, 路由独享钩子.
+
+APP.vue 没有组件内钩子函数,因为 APP.vue 是页面入口, 这个组件是必定会加载的, 而使用组件内钩子函数可以阻止组件加载.
+
+全局钩子主要用于路由鉴权, 但是消耗很大. 组件内的钩子 `beforeRouterLeave` 主要用于用户离开前的提示 (比如说有未保存的文章), 这个钩子有一些坑: hash模式下, 浏览器的后退按钮无法触发这个钩子函数. 同时我们还可以监听用户的关闭当前窗口/浏览器事件
+
+```
+window.onbefreunload = e => '确定离开当前页面?你的修改将不会被保存!'
+```
+
+为了防止恶意网站, 用户关闭窗口/浏览器事件是不可阻止的,只能昧,而且不同的浏览器兼容性也不同.
+
+---
+
+### **Vuex持久化存储**
+
+Vuex中的数据, 刷新页面之后就会丢失. 要实现持久化存储需要借助本地存储 (cookie 或 storage等), 一般是登录之后返回的数据 (角色, 权限, token等) 需要存储到Vuex, 所以我们可以在登录页面将数据存储到本地, 而在主页面 (除了登录页, 其他所有页面的入口) 进入之前 (beforeCreate 或者路由钩子 beforeRouterEnter) 读取出来, 并提交到 Vuex 就好了. 这样即使刷新, 也会触发主页面的进入钩子函数, 会被提交到 Vuex.
+
+```
+beforeRouterEnter(to, from, next) {
+	const token = localStorage.getItem('token')
+	let right = localStorage.getItem('right')
+	try {
+		right = JSON.parse(right)
+	} ctach {
+		next(vm => {
+			// 弹空采用elementUI
+			vm.$alert('获取权限失败').finally(() => {
+				vm.$router.replace({name: 'login'})
+			})
+		})
+	}
+
+	if(!right || !token) {
+		next({name: 'login', replace: true})
+	} else {
+		next(vm => {
+			// 这里的事件会在mounted之后触发
+			vm.$store.commit('setToken', token)
+			vm.$store.commit('setRight', rght)
+		})
+	}
+}
+```
+
+beforeRouteEnter 的回调会在 mounted 钩子之后触发, 这就比较蛋疼了. 而主页的 mounted 会在所有子组件的 mounted 之后触发,所以我们可以这样写:
+
+```
+import store from '^/store'	// 将实例化的store引入进来
+
+beforeRouterEnter(to, from, next) {
+	const token = localStorage.getItem('token')
+	if(!token) {
+		next({name: 'login', replace: true})
+	} else {
+		store.commit('setToken', token)
+		next()
+	}
+}
+```
+
+要想实现数据修改之后仍能持久化, 我们可以先把数据存到 localStorage, 然后监听 window.onstorage 事件, 数据有修改提交到 Vuex.
+
+---
+
+### **mutations 里面触发 action**
+
+mutation 是同步修改 status 的值, 假如另一个值是异步获取 (action) 的, 依赖于这个同步的值的修改, 需要在 mutations 里面赋值之前触发 action 里面的事件, 我们可以给实例化的 Vuex 命名, 在 mutations 里面拿到 store 对象.
+
+```
+const store = new Vuex.Store({
+	state: {
+		age: 18,
+		name: 'zhangsan',
+	},
+	mutations: {
+		setAge(state, val) {
+			// 假如age变化之后, name也要跟着变化
+			// 需要在每次给age赋值的时候, 同步触发action里面的getName
+			state.age = val
+			store.dispatch('getName')
+		},
+		setName(state, val) {
+			state.name = val
+		}
+	},
+	actions: {
+		getName({commit}) {
+			const name = feth('name')	// 从接口异步获取
+			commit('setName', name)
+		}
+	}
+})
+```
+
+---
+
+### **Vue.observable进行组件通信**
+
+如果项目很小, 为需要用到 vuex, 可以用 Vue.observable 来模拟一个:
+
+```
+// store.js
+import Vue from 'vue'
+
+const store = Vue.observable({name: '张三', age: 20})
+const mutations = {
+	setAge(age) {
+		store.age = age
+	},
+	setName(name) {
+		store.name = name
+	}
+}
+export {store, mutations}
+```
+
+---
+
+### **axios 的 qs 插件**
+
+get请求的数据放在 url 里面, 类似于 http://www.xxx.com?a=1&b=2, 其中 a=1&b=2 就是get的参数, 而对于 post 请求, 参数放到 body 里面, 常用的数据格式有表单数据和 json 数据, 两者的差异就是数据格式不同, 表单数据编码和 get 一样, 只不过是放在 body 里面, 而 json 数据则是 json 字符串.
+
+qs 基本使用
+
+```
+import qs from 'qs' // qs 是 axios 里面自带的, 所以直接引入就可以了
+
+const data = qa.stringify({
+	username: this.formDara.username,
+	oldPassword: this.formData.oldPassword,
+	newPassword: this.formData.newPassword1
+})
+this.$http.post('/changePassword.php', data)
+```
+
+qs.parse() 是将 URL 解析成对象的形式, qs.stringify() 是将对象序列化成 URL 的形式, 以&进行拼接,而对于不同的数据格式, axios 坐自动设置对应的 conent-type, 不需要手动设置
+
+一个接口需要用表单传一个数组,假设数据是 `arr = [1,2,3]` 如果直接使用qs.stringify(), 则数据会变成 `arr[]=1&arr[]=2&arr[]=3`, 很容易看出来多了个 `[]`, 让接口把参数改名成 `arr[]` 就能使用, 但这样不好, 但是这样不好, 不过可以发现, 表单数组的本质就是同名参数传多次, 这时候我们也可以这样
+
+```
+const data = new FormData()
+arr.forEach(item => {
+	data.append('arr', item)
+})
+```
+
+完美解决, qs 转换支持第二个参数, 完美解决我们的问题
+
+```
+const data = qs.stringify(arr, {arryFormat: 'repeat'})
+```
