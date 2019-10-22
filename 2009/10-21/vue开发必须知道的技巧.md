@@ -341,4 +341,140 @@ data() {
   }
 }
 // {{user.lastName}} 是默认数据, v-slot: todo 当父页面没有(="slotProps")
+```  
+
+**EventBus**  
+1. 就是声明一个全局 Vue 实例变量 EventBus, 把所有的通信数据, 事件监听都存储到这个变量上  
+2. 类似于 Vuex, 但这种方式只适用于极小的项目  
+3. 原理就是利用 $on 和 $emit 并实例化一个全局 vue 实现数据共享  
+
+```
+// 在main.js
+Vue.prototype.$eventBus = new Vue()
+
+// 传值组件
+this.$eventBus.$emit('eventTarget', '这是eventTarget传过来的值')
+
+// 接收组件
+this.$eventBus.$on('eventTarget', v => {
+  console.log('eventTarget', v)
+})
+```  
+4. 可以实现平缓,嵌套组件传值, 但是对应的事件名 eventTarget 必须全局唯一的.
+
+**路由传参**
+
+方案一
+
+```
+// 路由定义
+{
+  path: 'describe/:id',
+  name: 'Describe',
+  component: Describe
+}
+
+// 页面传参
+this.$router.push({
+  path: '/describe/${id}'
+})
+
+// 页面获取
+this.$route.params.id
+```
+
+方案二
+
+```
+// 路由定义
+{
+  path: '/describe',
+  name: 'Describe',
+  component: Describe
+}
+
+// 页面传参
+this.$router.push({
+  name: 'Describe',
+  params: {
+    id: id
+  }
+})
+
+// 页面获取
+this.$route.params.id
+```
+
+方案三
+
+```
+// 路由定义
+{
+  path: '/describe',
+  name: 'Describe',
+  component: Describe
+}
+
+// 页面传参
+this.$router.push({
+  path: '/discribe',
+  query: {
+    id: id
+  }
+})
+
+// 页面获取
+this.$route.query.id
+```
+
+**Vue.observable**
+
+2.6.0新增
+
+用法: 让一个对象可响应, vue内部会用它来处理 data 函数返回的对象
+
+返回的对象可以直接用于渲染函数和计算属性内, 并且会在发生改变时触发相应的更新  
+也可以作为最小的跨组件状态存储器, 用于简单的场景
+
+---
+
+### **render 函数**
+
+场景: 有些代码在 template 里面定会重复很多,所以这个时候 render 函数就有作用了.
+
+```
+// 根据 props 生成标签
+// 初级
+<template>
+  <div>
+    <div v-if="level === 1"><slot></slot></div>
+    <p v-else-if="level === 2"><slot></slot></p>
+    <h1 v-else-if="level === 3"><slot></slot></h1>
+    <h2 v-else-if="level===4"><slot></slot></h2>
+    <strong v-else-if="level === 5"><slot></slot></strong>
+    <textarea v-else-if="level === 6"><slot></slot></textarea>
+  </div>
+</template>
+
+// 优化版, 利用 render 函数减少了代码重复率
+<template>
+  <div>
+    <child :level="level">Hello World!</child>
+  </div>
+</template>
+<script>
+  import Vue from 'vue'
+  Vue.compoment('child', {
+    render(h) {
+      const tag = ['div', 'p', 'strong', 'h1', 'h2', 'textarea'][this.level-1]
+      return h(tag, this.$slots.default)
+    },
+    props: {
+      level: {
+        type: Number,
+        required: true
+      }
+    }
+  })
+</script>
 ```
