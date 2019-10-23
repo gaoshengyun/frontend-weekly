@@ -1195,3 +1195,106 @@ Vue.prototype.$log = window.console.log
 <div> {{$log(info)}} </div>
 ```
 
+---
+
+### **vue-loader**
+
+1. preserveWhitespace
+
+场景: 开发 vue 代码一般会有空格, 这个时候如果打包压缩不去掉空格会加大包的体积, 配置 preserveWhitespace 可以减小包的体积
+
+```
+{
+  vue: {
+    preserveWhitespace: false
+  }
+}
+```
+
+2. transformToRequire
+
+韬晦: 以前写 vue 的时候经常会写到这样的代码: 把图片提前 require 传递 给一个变量再传给组件
+
+```
+// page 代码
+<template>
+  <div>
+    <avatar :img-src="imgSrc"></avatar>
+  </div>
+</template>
+<script>
+  export default {
+    created() {
+      this.imgSrc = require('./asset/default-avatar.png')
+    }
+  }
+</script>
+```
+
+现在: 通过配置 transformToRequire 后, 就可以直接配置, 这样 vue-loader 会把对应的属性自动 require 之后传给组件
+
+```
+// vue-cli 2.x 在 vue-loader.config.js 默认配置是
+transformToRequire: {
+  video: ['src', 'poster'],
+  source: 'src',
+  img: 'src',
+  image: 'xlink:href'
+}
+
+// 配置文件, 如果 vue-cli 2.x 在 vue-loader.config.js 里面修改
+avatar: ['default-src']
+
+
+// vue/cli 3.x 在 vue.config.js
+// vue/cli 3.x 将 transformToRequire 属性换为了 transformAssetUrls
+
+module.exports = {
+  pages,
+  chainWebpack: config => {
+    config
+      .module
+        .rule('vue')
+        .use('vue-loader')
+        .loader('vue-loader')
+        .tap(options => {
+          options.transformAssetUrls = {
+            avatar: 'img-src'
+          }
+          return options
+        })
+  }
+}
+
+// page 代码可以简化为
+<template>
+  <div>
+    <avatar img-src="./asset/default-avatar.png"></avatar>
+  </div>
+</template>
+```
+
+---
+
+### **img 加载失败**
+
+场景: 有些时候后台返回图片地址不一定能打开, 所以这个时候应该加一张默认图
+
+```
+// page 代码
+<img :src="imgUrl" @error="handlerError" alt="">
+<script>
+  export default {
+    data() {
+      return {
+        imgUrl: ''
+      }
+    },
+    methods: {
+      handlerError(e) {
+        e.target.src = require('图片路径')
+      }
+    }
+  }
+</script>
+```
