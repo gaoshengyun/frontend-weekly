@@ -476,5 +476,722 @@ this.$route.query.id
       }
     }
   })
+  export default {
+    name: 'hehe',
+    data() {
+      return {
+        level: 3
+      }
+    }
+  }
 </script>
 ```
+
+render 和 template 的对比  
+前者适合复杂逻辑, 后者适合简单逻辑  
+后者属于声明式渲染, 前者属于片定义 render 函数  
+前者的性能较高, 后者性能较低
+
+---
+
+**异步组件**
+
+场景: 项目过大就会导致加载缓慢, 所以异步组件实现按需加载就是必须要做的事情
+
+异步组件注册,有3种方法
+
+```
+// 工厂函数执行 resolve 回调
+Vue.component('async-webpack-example', function(resolve) {
+  // 这个特殊的 require 语法将会告诉 webpack
+  // 自动将你的构建代码切割成多个包, 这些包会通过 Ajax 请求加载
+  require(['./my-async-component'], resolve)
+})
+
+// 工厂函数返回 Promise
+Vue.component(
+  'async-webpack-example',
+  // 这个 import 函数会返回一个 Promise 对象
+  () => import('./my-async-component')
+)
+
+// 工厂函数返回一个配置化组件对象
+const AsyncComponent = () => ({
+  // 需要加载的组件 (应该是一个 Promise 对象)
+  component: import('./MyComponent.vue'),
+  // 异步组件加载时使用的组件
+  loading: LoadingComponent,
+  // 加载失败时使用的组件
+  error: ErrorComponent,
+  // 展示加载组件的延时时间, 默认值是200毫秒
+  delay: 200,
+  // 如果提供了超时间且组件加载也超时了, 则使用加载失败时使用的组件, 默认值是 Infinity
+  timeout: 3000
+})
+```
+
+异步组件的渲染本质上就是执行2次或2次以上的渲染, 先把当前组件渲染为注释节点, 当组件加载成功后, 通过 forceRender 执行重新渲染, 或者是渲染为注释节点, 然后再渲染为 loading 节点, 在渲染为请求完成的组件
+
+路由的按需加载
+
+```
+// webpack < 2.4 时
+{
+  path: '/',
+  name: 'home',
+  component: resolve => require(['@/components/home'], resolve)
+}
+
+// webpack > 2.4 时
+{
+  path: '/',
+  name: 'home',
+  component: () => import('@/components/home')
+}
+```
+
+import() 方法由 es6 提出, import() 方法是动态加载, 返回一个 Promise 对象, then 方法的参数是加载到的模块. 类似于 Node.js 的 require 方法, 主要 import() 方法是异步加载的.
+
+---
+
+### **动态组件**
+
+场景: 做一个 tab 切换时就会涉及到组件动态加载
+
+```
+<component v-bind:is="currenttabComponent"></component>
+```
+
+但是这样每次组件都会重新加载, 全消耗大量性能,所以 `<keep-alive>` 就直到作用了
+
+```
+<keep-alive>
+  <component v-bind:is="currentTabComponent"></component>
+</keep-alive>
+```
+
+这样切换没有动画效果,可以利用内置的 transition
+
+```
+<transition>
+  <keep-alive>
+    <component :is="currentTabComponent"></component>
+  </keep-alive>
+</transition>
+```
+
+---
+
+### **递归组件**
+
+场景: 如果开发一个 tree 组件, 里面层级是根据后台数据决定的, 这个时候就需要用到递归组件
+
+```
+// 递归组件: 组件在它的模块内可以递归调用自己, 只要给组件设置 name 组件就可以了.
+// 必须给一个条件来限制数量, 否则会抛出错误: max stack size exceeded
+// 组件递归用来开发一些具体有未知层级关系的独立组件.
+
+<template>
+  <div v-for="(item, index) in treeArr">
+    子组件, 当前层级值: {{index}} <br>
+    <!-- 递归调用自身, 后台判断是否不存在值 -->
+    <tree :item="item.arr" v-if="item.flag"></tree>
+  </div>
+</template>
+<script>
+  export default {
+    // 必须设置 name, 组件内部才能递归调用
+    name: 'tree', 
+    data() {
+      return {}
+    },
+    // 接收外部传入的值
+    props: {
+      item: {
+        type: Array,
+        default: () => []
+      }
+    }
+  }
+</script>
+```
+
+递归组件必须设置 name 和结束的阀值
+
+---
+
+### **函数式组件**
+
+定义: 无状态,无法实例化, 内部没有任何生命周期处理的方法  
+规则: 在2.3.0之前的版本中, 如果一个函数想到接收 props, 则 props 选项中  
+> 在 2.3.0 以上的版本中,可以省略 props 选项, 所有组件上的特性都人被自己喜欢解析为 prop, 在 2.5.0 及以上的版本中, 如果使用了单文件级(就是普通的 .vue 文件), 可以直接在 template 上声明 functional,组件需要的一切都是通过 context 参数传递.
+
+context 属性有:  
+1. props: 提供所有 prop 对象
+2. children: VNode 子节点的数组
+3. slots: 一个函数, 返回了包含所有插槽的对象
+4. scopedSlots: 2.6.0+ 一个暴露传入的作用域插槽的对象, 也可以函数形式暴露普通插槽.
+5. data: 传递给组件的整个数据对象, 作为 createElement 的第二个参数传入组件.
+6. parent: 对父组件的引用
+7. listeners: 2.3.0+ 一个包含了所有父组件为当前组件注册的事件监听器的对象. 这是 data.on 的一个别名.
+8. injections: 2.3.0+ 如果使用了inject 选项, 则该对象包含了应该被注入的属性
+
+```
+<template>
+  <div v-for="(item, index) in props.arr"> {{item}} </div>
+<template>
+```
+
+---
+
+### **components 和 Vue.component**
+
+components: 局部注册组件
+
+```
+export default {
+  components: {home}
+}
+```
+
+Vue.component: 全局注册
+
+```
+Vue.component('home', home)
+```
+
+---
+
+### **Vue.extend**
+
+场景: vue组件中有些需要将一些元素挂载到元素上, 这时候就要用到 extend了
+
+```
+var Profile = Vue.extend({
+  template: `<p>{{extendData}}<br>实例传入的数据为: {{propsExtend}}</p>`,
+  data: function() {
+    return {
+      extendData: '这是extend扩展的数据'
+    }
+  }
+  props: ['propsExtend']
+})
+
+// 创建的构造器可以挂载到元素上, 也可以通过 components 或 Vue.component() 注册使用
+// 挂载到一个元素上,可以通过 propsData 传参
+new Profile({
+  propsData: {propsExtend: '这是实例传入的数据'}
+}).$mount('#app-extend')
+
+// 通过 components 或 Vue.component() 注册
+Vue.component('Profile', Profile)
+```
+
+---
+
+### **mixins**
+
+场景: 有些组件有些重复的 js 逻辑, 如校验手机验码, 解析时间等, mixins 就可以实现这种混入
+
+mixins 值是一个数组
+
+```
+const mixin = {
+  created() {
+    this.dealTime()
+  },
+  methods: {
+    dealTime() {
+      console.log('这是 mixin 的 dealTime 里面的方法')
+    }
+  }
+}
+
+export default {
+  mixins: [mixin]
+}
+```
+
+---
+
+### **extends**
+
+extends 用法和 mixins 很相似, 只不过接收的参数是简单的选项对象或构造函数, 所以 extends 只能单次扩展一个组件
+
+```
+const extend = {
+  created() {
+    this.dealTime()
+  },
+  methods: {
+    dealTime() {
+      console.log('这个是extend的dealTime方法')
+    }
+  }
+}
+
+export default {
+  extends: extend
+}
+```
+
+---
+
+### **Vue.use()**
+
+场景: 我们使用 element 时会先 import, 再Vue.use()一下, 实际上就是注册组件, 触发 install 方法, 这个组件调用会结党使用到, 会自动组织多次注册相同的插件
+
+---
+
+### **install**
+
+场景: 在 Vue.use() 说到, 执行该方法会触发 install, 是开发 vue 插件, 这个方法的第一个参数是 Vue 构造器, 第二个参数是 一个可选的选项对象
+
+```
+var MyPlugin = {}
+MyPlugin.install = function(Vue, options) {
+  // 添加全局资源, 第二个参数传一个默认值是update对应的值
+  Vue.directive('click', {
+    bind(el, binding, vnode, oldVnode) {
+      // 做绑定的准备工作, 添加时间监听
+      console.log('指令my-directive的bind执行')
+    },
+    inserted: function(el) {
+      // 获取绑定的元素
+      console.log('指令my-directive的inserted执行')
+    },
+    update: function() {
+      // 根据获得的新值执行对应的更新
+      // 对于初始化值也会调用一次
+      console.log('指令my-directive的update执行')
+    },
+    componentUpdated: function() {
+      console.log(指令my-directive的componentUpdated执行)
+    },
+    unbind: function() {
+      // 做清理操作
+      // 比如移除 bind 时绑定的事件监听器
+      console.log('指令my-directive的unbind执行')
+    }
+  })
+}
+
+// 注入组件
+Vuex.mixin({
+  created: function() {
+    console.log('注入组件的created被调用')
+    console.log('options的值为', options)
+  }
+})
+
+// 添加实例方法
+Vue.protorype.$myMethod = function(methodOptions) {
+  console.log('实例用法 myMethod 被调用')
+}
+
+// 调用 MyPlugin
+Vue.use(MyPlugin, {someOption: true})
+
+// 挂载
+new vue({
+  el: '#app'
+})
+```
+
+---
+
+### **Vue.nextTick**
+
+2.1.0 新增  
+场景:  页面加载时需要让文本框获取焦点  
+用法: 在下次 DOM 更新循环结束之后执行延迟回调, 在修改数据之后立即使用这个方法,获取更新后的 DOM
+
+```
+mounted() { // 因为 mounted 阶段 dom 并未渲染完毕, 所以需要 $nextTick
+  this.$nextTick(() => {
+    this.$refs.inputs.focus() // 通过 $refs 获取 dom, 并绑定 focus 方法
+  })
+}
+```
+
+---
+
+### **Vue.directive**
+
+场景: 官方给我们提供了很多指令, 但是我们如果想将文字变成指定的颜色定义成指令使用, 这个时候就需要用到 Vue.directive
+
+```
+// 全局定义
+Vue.directive('change-color', function(el, binding, vnode) {
+  el.style['color'] = binding.value
+})
+
+// 使用
+<template>
+  <div v-change-color="color"> {{message}} </div>
+</template>
+<script>
+  export default {
+    data() {
+      return {
+        color: 'green'
+      }
+    }
+  }
+</script>
+```
+
+生命周期:  
+1. bind 只调用一次, 指令第一次绑定到元素时候调用, 用这个钩子可以定义一个绑定时执行一次的初始化动作
+2. insterted: 被绑定的元素插入父节点的时候调用(父节点存在即可调用, 不必存在 document 中)
+3. update: 被绑定元素所在的模板更新时调用, 而且无论绑定值是否有变化, 通过比较更新前后的绑定值, 忽略不必要的模板更新
+4. componentUpdate: 被绑定的元素所在模板完成一次更新周期的时候调用
+5. unbind: 只调用一次, 指令元素绑定的时候调用
+
+---
+
+### **Vue.filter**
+
+场景: 时间戳转化成年月日这是一个公共的方法, 可以抽离顾过滤器使用
+
+```
+// 在双花括号中使用
+{{ message | capitalize }}
+
+// 在 v-bind 中
+<div :id="rawId | formatId"></div>
+
+// 全局注册
+Vue.filter('stampToYYMMDD', (value) => {
+  // 处理逻辑
+})
+
+// 局部注册
+filters: {
+  stampToYYDDMM: value => {
+    // 处理逻辑
+  }
+}
+
+// 多个过滤器全局注册
+// /src/common/filters.js
+let dateServer = value => value.replace(/(\d{4})(\d{2})(\d{2})/g)
+export {dateServer}
+
+// /src/main.js
+import * as custom from './common/filters/custom'
+Object.keys(custom).forEach(key => Vue.filter(key, custom[key]))
+```
+
+---
+
+### **Vue.compile**
+
+场景: 在 render 函数中编译模板字符串, 只在独立构建时有效
+
+```
+var res = Vue.compile(`<div><span>{{msg}}</span></div>`)
+
+new Vue({
+  data: {
+    msg: 'hello'
+  },
+  render: res.render,
+  staticRenderFns: res.staticRenderFns
+})
+```
+
+---
+
+### **Vue.set()**
+
+场景: 当利用索引直接设置一个数组项时,或修改数组长度时, 由于 Object.defineprototpye()方法限制, 数据不响应式更新
+> vue 3.x 利用 proxy 这个问题将得到解决
+
+解决方案
+```
+// 利用 set
+this.$set(arr, index, item)
+```
+
+---
+
+### **Vue.config.keyCodes**
+
+场景: 自定义按钮修饰符别名
+
+```
+// 将键码 113 定义为 f2
+Vue.config,keyCodes.f2 = 113
+<input type="text" @keyup.f2="add">
+```
+
+---
+
+### **Vue.config.performance**
+
+场景: 监听性能
+
+```
+Vue.config.performance = true
+```
+
+只适用于开发模式和支持 performance.mark API的浏览器上
+
+---
+
+### **Vue.config.errorHandler**
+
+场景: 指定组件的渲染和观察期间捕获错误的处理函数
+
+```
+Vue.config.errorHandler = function(err, vm, info) {
+  // handler error
+  // info 是 vue 特定错误信息, 比如错误所在的生命周期钩子
+  // 只在 2.2.0+ 可用
+}
+```
+
+---
+
+### **Vue.config.warnHndler**
+
+2.4.0 新增
+
+场景: 为 Vue 的运行时警告赋予一个自定义处理函数, 只会在开发者环境下生效
+
+```
+Vue.config.warHandler = function(msg, vm, trace) {
+  // trace 是组件的继承关系追踪
+}
+```
+
+---
+
+### **v-pre**
+
+场景: vue是响应式系统,但是有些静态的标签不需要多次编译, 这样可以节点性能
+
+```
+<span v-pre> {{this will not be compiled}} </span>
+// 显示 {{this will not be compiled}}
+
+<span v-pre> {{msg}} </span>
+// 即使 data 里定义了 msg, 这里仍然显示{{msg}}
+```
+
+---
+
+### **v-cloak**
+
+场景: 在网速慢的情况下, 在使用 vue 绑定数据的时候, 渲染页面时会出现闪烁  
+用法: 这个指令保持在元素上直接关联到实例结束编译. 和 css 规则如 `[v-cloak]{display:none}` 一起用时,这个指令可以隐藏未编译的 Mustache 标签,直到实例准备完毕
+
+```
+// template 中
+<div id="#app" v-cloak>
+  <p> {{value.name}} </p>
+</div>
+
+// css 中
+[v-cloak] {
+  display: none;
+}
+```
+
+这样就可以解决闪烁, 但是会出现白屏, 可以结合骨架屏使用.
+
+---
+
+### **v-once**
+
+场景: 有些 template 中的静态 dom 没有改变, 这时就只需要渲染一次,可以降低性能开销
+
+```
+<span v-once> 这时只需加载一次标签 </span>
+```
+
+v-once 和 v-pre 的区别:  
+v-once 只渲染一次; v-pre不编译,原样输出
+
+---
+
+### **事件修饰符**
+
+- .stop: 阻止冒泡
+- .prevent: 阻止默认行为
+- .self: 仅绑定元素自身触发
+- .once: 2.1.4 新增, 只触发一次
+- .passive: 2.3.0 新增, 滚动事件的默认行为(即滚动行为), 将会立即触发, 不以有和 .prevent 一起使用
+
+---
+
+### **按键修饰符和按键码**
+
+场景: 有的时候需要监听键盘的行为, 如按下 enter 去查询接口等
+
+对应键盘上的关键字
+- .enter
+- .tab
+- .delete(捕获删除或退格键)
+- .esc
+- .space
+- .up
+- .down
+- .left
+- .right
+
+---
+
+### **路由 Vue-router**
+
+**缓存和动画**
+```
+<transition>
+  <keep-alive :include="['a', 'b']">
+  // 或 include="a,b" :include="/a|b/", a 和 b 表示组件的 name
+  // 因为有些页面, 如实时数据统计, 要实时刷新, 所以就不需要缓存
+  <router-view /> 
+  </keep-alive>
+
+  <router-view exclude="c" />
+  // c 表示组件的 name 值
+</transition>
+```
+
+>注: 匹配首先枪柄组件本身的 name 选项, 如果 name 选项不可用, 则匹配它的局部注册名称 (父组件 components 选项的键值). 匿名组件不能被匹配.
+
+用 v-if 做判断组件会重新渲染, 但是不用一一列举组件 name
+
+**全局路由钩子**
+
+1. router.beforeEach  
+
+```
+router.beforeEach((to, from, next) => {
+  console.log('全局前置守卫: beforeEach -- next需要调用')
+  // 一般登录拦截用这个, 也叫导航钩子守卫
+  if(path === '/login') {
+    next()
+    return
+  }
+  if(token) {
+    next()
+  }
+})
+```
+
+2. router.beforeResolve(v 2.5.0+)
+
+和 beforeEach 类似, 区别是在导航被确认之前, 同时在所有组件内守卫和异步路由组件被解析之后, 解析守卫就被调用, 即在 beforeEach 之后调用
+
+3. router.afterEach
+
+全局后置钩子, 在所有路由跳转结束的时候调用, 这些钩子不会接受 next 函数,也不会改变导航本身.
+
+**组件路由钩子**
+
+1. beforeRouterEnter  
+在渲染该组件的对应路由被确认前调用, 用法和参数与 router.beforeEach 类似, next 需要被主动调用此组件实例还未被创建,不能访问 this, 可以通过传一个回调给 next 来访问组件实例, 在导航被确认的时候执行回调, 并且把组件实例作为回调方法的参数
+
+```
+beforeRouterEnter(to, from, next) {
+  // 这里无法访问到组件实例, this === undefined
+  next(vm => {
+    // 通过 vm 访问组件实例
+  })
+}
+```
+
+2. beforeRouterUpdate (v 2.2.0+)
+
+在当前路由改变,并且该组件被利用时调用, 可以通过 this 访问实例, next 需要被主动调用, 不能传回调
+
+3. beforeRouterLeave
+
+导航离开该组件的对应路由时调用, 可以访问组件实例 this, next 需要被主动调用, 不能传回调.
+
+**Vue.$router**
+
+- this.$router.push(): 跳转到不同的 url, 但这个方法会向 history 栈添加一个记录, 点击后退会返回到上一个页面
+- this.$router.replace(): 不会记录
+- this.$router.go(n): n 可为正数,可为负数. 
+
+**Vue.$route**
+
+表示当前跳转的路由对象, 属性有
+- name: 路由名称
+- path: 路径
+- query: 传参接收值
+- params: 传参接收值
+- fullPath: 完成解析后的 URl, 包含查询参数和 hash 的完整路径
+- matched: 路由记录副本
+- redirectedFrom: 如果存在重定向, 即为重定向来源的路由的名字
+
+```
+this.$route.params.id
+// 获取通过 prarms 或 /:id 传参的参数
+
+this.$route.query.id
+// 获取通过 query 传参的参数
+```
+
+**router-view 的 key**
+
+场景: 由于 Vue 会利用相同组件, 即 /page/1 => /page/2 或 /page?id=1 => /page?id=2 这类链中转时, 将不会执行 cerated, mounted 之类的钩子
+
+```
+<router-view :key="$route.fullPath"><router-view>
+```
+
+这样组件的 created 和 mounted 就都会执行
+
+---
+
+### **Object.freeze**
+
+场景: 一个长列表数据, 一般不会更改, 但是 vue 会做 getter 和 setter 的转换  
+用法: 是 ES5 新增的我, 可以冻结一个对象, 防止对象被修改  
+支持: vue 1.0.18+ 对其提供了支持, 对于 data 或 vuex 里使用 freeze 冻结了的对象, vue 不会做 getter 和 setter 的转换  
+注意: 冻结只是冻结里面的单个属性, 引用地址还是可以更改的
+
+```
+new Vue({
+  data: {
+    // vue 不会对list里的object做 getter, setter 绑定
+    list: Object.freeze([
+      {value: 1},
+      {value: 2}
+    ])
+  },
+  mounted() {
+    // 界面不会有响应, 因为单个属性被冻结
+    this.list[0].value = 1000
+
+    // 下面两种做法, 界面都会响应
+    this.list = [
+      {value: 100},
+      {value: 200}
+    ]
+    this.list = Object.freeze([
+      {value: 100},
+      {value: 200}
+    ])
+  }
+})
+```
+
+---
+
+### **调试 template**
+
+场景: 在 Vue 开发过程中, 经常会遇到 template 模板渲染时 JavaScript 变量出错的问题, 此时也许会通过 console.log来进行调试, 这时可以在开发环境挂载一个log函数
+
+```
+// main.js
+Vue.prototype.$log = window.console.log
+
+// 组件内部
+<div> {{$log(info)}} </div>
+```
+
