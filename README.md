@@ -49,3 +49,5 @@
 - [常用的css技巧](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/10-18/常用的css技巧.md)
 
 - [彻底弄清Promise,Generator以及Async](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/10-19/彻底弄清Promise%2CGenerator以及Async.md)
+
+- [vue开发必须知道的技巧](https://github.com/gaoshengyun/frontend-weekly/blob/master/2009/10-21/vue开发必须知道的技巧.md)
